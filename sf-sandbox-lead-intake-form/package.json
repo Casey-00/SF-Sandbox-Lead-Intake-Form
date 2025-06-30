@@ -1,0 +1,23 @@
+{
+  "name": "salesforce-form-handler",
+  "version": "1.0.0",
+  "description": "Handles web form submissions by creating leads in Salesforce",
+  "main": "salesforce-form-handler.js",
+  "scripts": {
+    "start": "node salesforce-form-handler.js",
+    "create-lead": "node interactive-lead-creator.js",
+    "setup": "npm install && echo 'Please copy .env.example to .env and add your credentials'"
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "dotenv": "^16.4.7"
+  },
+  "keywords": [
+    "salesforce",
+    "leads",
+    "form-handler",
+    "crm"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}
