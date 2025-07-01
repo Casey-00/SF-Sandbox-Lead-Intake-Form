@@ -4,9 +4,6 @@ const axios = require('axios');
 // Load environment variables from .env file
 const SF_CLIENT_ID = process.env.SF_CLIENT_ID;
 const SF_CLIENT_SECRET = process.env.SF_CLIENT_SECRET;
-const SF_USERNAME = process.env.SF_USERNAME;
-const SF_PASSWORD = process.env.SF_PASSWORD;
-const SF_SECURITY_TOKEN = process.env.SF_SECURITY_TOKEN;
 const SF_LOGIN_URL = process.env.SF_LOGIN_URL || 'https://login.salesforce.com';
 
 async function authenticate() {
@@ -23,11 +20,9 @@ async function authenticate() {
   
   const response = await axios.post(loginUrl, null, {
     params: {
-      grant_type: 'password',
+grant_type: 'client_credentials',
       client_id: SF_CLIENT_ID,
-      client_secret: SF_CLIENT_SECRET,
-      username: SF_USERNAME,
-      password: SF_PASSWORD + SF_SECURITY_TOKEN
+      client_secret: SF_CLIENT_SECRET
     }
   });
   return {
@@ -46,30 +41,98 @@ async function queryLead(email, token, instanceUrl) {
   return response.data.records[0];
 }
 
-async function createLead(firstName, lastName, email, jobTitle, companyName, token, instanceUrl) {
-  const response = await axios.post(`${instanceUrl}/services/data/v59.0/sobjects/Lead`, {
+async function createLead(firstName, lastName, email, jobTitle, companyName, notes, token, instanceUrl) {
+  const leadData = {
     FirstName: firstName,
     LastName: lastName,
     Email: email,
     Title: jobTitle,
     Company: companyName,
     LeadSource: 'Web'
-  }, {
+  };
+  
+  // Add description if notes are provided
+  if (notes && notes.trim()) {
+    leadData.Description = notes;
+  }
+  
+  const response = await axios.post(`${instanceUrl}/services/data/v59.0/sobjects/Lead`, leadData, {
     headers: { Authorization: `Bearer ${token}` }
   });
   return response.data.id;
 }
 
 async function createTask(leadId, notes, token, instanceUrl) {
-  await axios.post(`${instanceUrl}/services/data/v59.0/sobjects/Task`, {
+  console.log('📝 Creating task for lead ID:', leadId);
+  console.log('Task notes:', notes);
+  
+  const taskData = {
     WhoId: leadId,
     Subject: 'New form resubmission',
-    Description: notes,
+    Description: notes || 'Form resubmitted without additional notes',
     Status: 'Not Started',
-    Priority: 'Normal'
-  }, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
+    Priority: 'Normal',
+    ActivityDate: new Date().toISOString().split('T')[0] // Today's date
+  };
+  
+  console.log('Task data being sent:', JSON.stringify(taskData, null, 2));
+  
+  try {
+    const response = await axios.post(`${instanceUrl}/services/data/v59.0/sobjects/Task`, taskData, {
+      headers: { 
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    console.log('✅ Task creation response:', JSON.stringify(response.data, null, 2));
+    console.log('🎯 Task ID created:', response.data.id);
+    
+    // Immediately verify the task was created
+    await verifyTaskCreation(response.data.id, token, instanceUrl);
+    
+    return response.data.id;
+  } catch (error) {
+    console.error('❌ Error creating task:');
+    console.error('Error message:', error.message);
+    if (error.response) {
+      console.error('Response status:', error.response.status);
+      console.error('Response data:', JSON.stringify(error.response.data, null, 2));
+    }
+    throw error;
+  }
+}
+
+async function verifyTaskCreation(taskId, token, instanceUrl) {
+  console.log('🔍 Verifying task creation for ID:', taskId);
+  
+  try {
+    const response = await axios.get(`${instanceUrl}/services/data/v59.0/sobjects/Task/${taskId}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    
+    console.log('✅ Task verification successful:');
+    console.log('Task details:', JSON.stringify({
+      Id: response.data.Id,
+      Subject: response.data.Subject,
+      Description: response.data.Description,
+      Status: response.data.Status,
+      Priority: response.data.Priority,
+      WhoId: response.data.WhoId,
+      ActivityDate: response.data.ActivityDate,
+      CreatedDate: response.data.CreatedDate
+    }, null, 2));
+    
+    return response.data;
+  } catch (error) {
+    console.error('❌ Error verifying task creation:');
+    console.error('Error message:', error.message);
+    if (error.response) {
+      console.error('Response status:', error.response.status);
+      console.error('Response data:', JSON.stringify(error.response.data, null, 2));
+    }
+    throw error;
+  }
 }
 
 async function submitForm({ firstName, lastName, jobTitle, email, companyName, notes }) {
@@ -91,7 +154,7 @@ async function submitForm({ firstName, lastName, jobTitle, email, companyName, n
       console.log('📝 Task added successfully!');
     } else {
       console.log('✨ Step 3: Creating new lead...');
-      const leadId = await createLead(firstName, lastName, email, jobTitle, companyName, token, instanceUrl);
+      const leadId = await createLead(firstName, lastName, email, jobTitle, companyName, notes, token, instanceUrl);
       console.log('🎉 Lead created with ID:', leadId);
     }
     console.log('✅ Form submission completed successfully!');
