@@ -71,4 +71,7 @@ QUICK TIPS:
 • Response is always JSON format
 • Can be called from any website (CORS enabled)
 
-Full documentation: TRIAL_ACCESS_API_HANDOFF.txt in repo
+LINKS:
+📚 GitHub Repo: https://github.com/Casey-00/SF-Sandbox-Lead-Intake-Form
+🌐 Vercel Project: https://vercel.com/nuonco/salesforce-lead-intake-api
+📄 Full documentation: TRIAL_ACCESS_API_HANDOFF.txt in repo
