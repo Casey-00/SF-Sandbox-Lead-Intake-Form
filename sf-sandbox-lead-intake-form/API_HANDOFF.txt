@@ -1,0 +1,60 @@
+LEAD INTAKE API - DEVELOPER HANDOFF
+
+API FUNCTIONALITY:
+• First submission with new email = Creates lead in Salesforce
+• Duplicate email submission = Creates follow-up task on existing lead
+
+ENDPOINT:
+POST https://salesforce-lead-intake-api.vercel.app/api/submit-lead
+
+AUTHENTICATION:
+None required - pre-configured
+
+FORM FIELDS TO API MAPPING:
+firstName (required)
+lastName (required) 
+email (required) - used for duplicate detection
+jobTitle OR title (required)
+companyName OR company (required)
+notes (optional) - saved as lead description
+
+REQUEST EXAMPLE:
+{
+  "firstName": "John",
+  "lastName": "Doe",
+  "email": "john.doe@company.com", 
+  "jobTitle": "Marketing Manager",
+  "companyName": "Acme Corp",
+  "notes": "Interested in enterprise solution"
+}
+
+SUCCESS RESPONSE:
+{
+  "success": true,
+  "message": "Thank you! Your information has been submitted."
+}
+
+ERROR RESPONSE:
+{
+  "success": false,
+  "message": "Sorry, there was an error. Please try again.",
+  "error": "Details here"
+}
+
+QUICK TIPS:
+• CORS enabled - can call from any domain
+• Duplicate handling - same email creates follow-up task instead of duplicate lead
+• Content-Type: application/json
+• POST method only (OPTIONS supported for preflight)
+• Both "jobTitle"/"title" and "companyName"/"company" field names accepted
+
+TEST WITH CURL:
+curl -X POST https://salesforce-lead-intake-api.vercel.app/api/submit-lead \
+  -H "Content-Type: application/json" \
+  -d '{
+    "firstName": "Test",
+    "lastName": "User", 
+    "email": "test@example.com",
+    "jobTitle": "Developer",
+    "companyName": "Test Corp"
+  }'

@@ -170,8 +170,113 @@ async function submitForm({ firstName, lastName, jobTitle, email, companyName, n
   }
 }
 
+async function submitTrialRequest({ firstName, lastName, email, organizationName, fullName }) {
+  console.log('🔍 Starting trial access request process...');
+  console.log('Trial request data received:', { firstName, lastName, email, organizationName, fullName });
+  
+  try {
+    console.log('🔑 Step 1: Authenticating...');
+    const { token, instanceUrl } = await authenticate();
+    console.log('✅ Authentication successful!');
+    console.log('Instance URL:', instanceUrl);
+
+    console.log('🔍 Step 2: Checking for existing lead...');
+    const existingLead = await queryLead(email, token, instanceUrl);
+
+    if (existingLead) {
+      console.log('✅ Lead exists. Adding trial access task...');
+      await createTrialTask(existingLead.Id, organizationName, token, instanceUrl);
+      console.log('📝 Trial access task added successfully!');
+    } else {
+      console.log('✨ Step 3: Creating new lead for trial access...');
+      
+      // Handle name parsing - if fullName is provided and firstName/lastName are missing
+      let finalFirstName = firstName;
+      let finalLastName = lastName;
+      
+      if (!firstName && !lastName && fullName) {
+        const nameParts = fullName.trim().split(' ');
+        finalFirstName = nameParts[0] || '';
+        finalLastName = nameParts.slice(1).join(' ') || 'Unknown';
+        console.log(`📝 Parsed fullName "${fullName}" into firstName: "${finalFirstName}", lastName: "${finalLastName}"`);
+      }
+      
+      const leadId = await createTrialLead(finalFirstName, finalLastName, email, organizationName, token, instanceUrl);
+      console.log('🎉 Trial access lead created with ID:', leadId);
+    }
+    console.log('✅ Trial access request completed successfully!');
+  } catch (err) {
+    console.error('❌ Error during trial access request:');
+    console.error('Error message:', err.message);
+    console.error('Error stack:', err.stack);
+    if (err.response) {
+      console.error('Response status:', err.response.status);
+      console.error('Response data:', JSON.stringify(err.response.data, null, 2));
+    }
+    throw err; // Re-throw so API can handle it
+  }
+}
+
+async function createTrialLead(firstName, lastName, email, organizationName, token, instanceUrl) {
+  const leadData = {
+    FirstName: firstName,
+    LastName: lastName,
+    Email: email,
+    Company: organizationName || 'Unknown Organization',
+    LeadSource: 'Web - Trial Request',
+    Description: 'Requested trial access'
+  };
+  
+  console.log('Creating trial lead with data:', JSON.stringify(leadData, null, 2));
+  
+  const response = await axios.post(`${instanceUrl}/services/data/v59.0/sobjects/Lead`, leadData, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return response.data.id;
+}
+
+async function createTrialTask(leadId, organizationName, token, instanceUrl) {
+  console.log('📝 Creating trial access task for lead ID:', leadId);
+  
+  const taskData = {
+    WhoId: leadId,
+    Subject: 'Requested trial access',
+    Description: organizationName ? `Trial access requested for organization: ${organizationName}` : 'Trial access requested',
+    Status: 'Not Started',
+    Priority: 'Normal',
+    ActivityDate: new Date().toISOString().split('T')[0] // Today's date
+  };
+  
+  console.log('Trial task data being sent:', JSON.stringify(taskData, null, 2));
+  
+  try {
+    const response = await axios.post(`${instanceUrl}/services/data/v59.0/sobjects/Task`, taskData, {
+      headers: { 
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    console.log('✅ Trial task creation response:', JSON.stringify(response.data, null, 2));
+    console.log('🎯 Trial task ID created:', response.data.id);
+    
+    // Immediately verify the task was created
+    await verifyTaskCreation(response.data.id, token, instanceUrl);
+    
+    return response.data.id;
+  } catch (error) {
+    console.error('❌ Error creating trial task:');
+    console.error('Error message:', error.message);
+    if (error.response) {
+      console.error('Response status:', error.response.status);
+      console.error('Response data:', JSON.stringify(error.response.data, null, 2));
+    }
+    throw error;
+  }
+}
+
 // Export for use in other modules
-module.exports = { submitForm };
+module.exports = { submitForm, submitTrialRequest };
 
 // If running directly (not imported), run the interactive version
 if (require.main === module) {
