@@ -1,0 +1,74 @@
+🚀 NEW API ENDPOINT: Trial Access
+
+ENDPOINT: https://salesforce-lead-intake-api.vercel.app/api/trial-access
+METHOD: POST | AUTH: None required | CORS: Enabled
+
+REQUIRED FIELDS:
+• email - User's email address
+• Name - Either firstName + lastName OR fullName (auto-parsed)
+
+OPTIONAL FIELDS:
+• organizationName - Company name (maps to Salesforce Company field)
+• Also accepts: organization, companyName, company
+
+FUNCTIONALITY:
+✅ Creates new leads in Salesforce with LeadSource "Web" and Description "Requested trial access"
+✅ Adds tasks to existing leads for duplicate emails
+✅ Auto-parses full names (e.g., "Jane Smith-Johnson" → firstName: "Jane", lastName: "Smith-Johnson")
+✅ Handles multiple organization name field variations
+✅ Returns consistent JSON responses
+
+LOGIC:
+• NEW email address → Creates new lead in Salesforce (LeadSource: "Web")
+• EXISTING email → Adds task with subject "Requested trial access"
+• Trial access info stored in Description field for new leads
+• Organization info included in lead/task for qualification
+• All submissions tracked and handled gracefully
+
+EXAMPLE REQUEST (firstName/lastName):
+{
+  "firstName": "John",
+  "lastName": "Doe", 
+  "email": "john.doe@company.com",
+  "organizationName": "Acme Corp"
+}
+
+EXAMPLE REQUEST (fullName):
+{
+  "fullName": "Jane Smith-Johnson",
+  "email": "jane@company.com",
+  "organizationName": "Tech Solutions Inc"
+}
+
+SUCCESS RESPONSE:
+{
+  "success": true,
+  "message": "Thank you! Your trial access request has been submitted."
+}
+
+TEST WITH CURL:
+curl -X POST https://salesforce-lead-intake-api.vercel.app/api/trial-access \
+  -H "Content-Type: application/json" \
+  -d '{
+    "firstName": "Test",
+    "lastName": "User",
+    "email": "test@example.com",
+    "organizationName": "Test Company"
+  }'
+
+QUICK INTEGRATION:
+fetch('https://salesforce-lead-intake-api.vercel.app/api/trial-access', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(formData)
+})
+
+QUICK TIPS:
+• Always include email - it's the primary identifier
+• Use either firstName/lastName OR fullName (not both)
+• organizationName helps with lead scoring in Salesforce
+• Endpoint handles duplicate submissions gracefully
+• Response is always JSON format
+• Can be called from any website (CORS enabled)
+
+Full documentation: TRIAL_ACCESS_API_HANDOFF.txt in repo

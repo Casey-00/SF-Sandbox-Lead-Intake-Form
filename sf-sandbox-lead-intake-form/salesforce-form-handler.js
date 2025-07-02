@@ -223,7 +223,7 @@ async function createTrialLead(firstName, lastName, email, organizationName, tok
     LastName: lastName,
     Email: email,
     Company: organizationName || 'Unknown Organization',
-    LeadSource: 'Web - Trial Request',
+    LeadSource: 'Web',
     Description: 'Requested trial access'
   };
   

@@ -78,7 +78,7 @@ Status: 400/500
 
 LOGIC NOTES
 -----------
-- NEW email address → Creates new lead in Salesforce with LeadSource: "Web - Trial Request"
+- NEW email address → Creates new lead in Salesforce with LeadSource: "Web" and Description: "Requested trial access"
 - EXISTING email → Adds task to existing lead with subject "Requested trial access"
 - Full name parsing handles compound names (e.g., "John Smith-Johnson" → firstName: "John", lastName: "Smith-Johnson")
 - Organization name is optional but recommended for lead qualification
