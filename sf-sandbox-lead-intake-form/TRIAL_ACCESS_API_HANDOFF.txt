@@ -1,0 +1,131 @@
+TRIAL ACCESS API - DEVELOPER HANDOFF
+=====================================
+
+ENDPOINT URL
+------------
+https://salesforce-lead-intake-api.vercel.app/api/trial-access
+
+METHOD
+------
+POST
+
+AUTHENTICATION
+--------------
+None required (public endpoint)
+
+CONTENT TYPE
+------------
+application/json
+
+REQUIRED FIELDS
+---------------
+- email (string) - User's email address
+- Name information - ONE of the following:
+  * firstName + lastName (strings)
+  * OR fullName (string) - will be auto-parsed into first/last
+
+OPTIONAL FIELDS
+---------------
+- organizationName (string) - Maps to Company field in Salesforce
+  * Also accepts: organization, companyName, company
+
+FIELD MAPPING
+-------------
+Form Field          → Salesforce Field
+email               → Email
+firstName           → FirstName
+lastName            → LastName
+fullName            → Auto-parsed to FirstName/LastName
+organizationName    → Company
+
+EXAMPLE REQUEST
+---------------
+curl -X POST https://salesforce-lead-intake-api.vercel.app/api/trial-access \
+  -H "Content-Type: application/json" \
+  -d '{
+    "firstName": "John",
+    "lastName": "Doe", 
+    "email": "john.doe@company.com",
+    "organizationName": "Acme Corp"
+  }'
+
+EXAMPLE REQUEST (FULL NAME)
+---------------------------
+curl -X POST https://salesforce-lead-intake-api.vercel.app/api/trial-access \
+  -H "Content-Type: application/json" \
+  -d '{
+    "fullName": "Jane Smith-Johnson",
+    "email": "jane@company.com",
+    "organizationName": "Tech Solutions Inc"
+  }'
+
+SUCCESS RESPONSE
+----------------
+Status: 200
+{
+  "success": true,
+  "message": "Thank you! Your trial access request has been submitted."
+}
+
+ERROR RESPONSE
+--------------
+Status: 400/500
+{
+  "success": false,
+  "message": "Error description",
+  "error": "Technical error details"
+}
+
+LOGIC NOTES
+-----------
+- NEW email address → Creates new lead in Salesforce with LeadSource: "Web - Trial Request"
+- EXISTING email → Adds task to existing lead with subject "Requested trial access"
+- Full name parsing handles compound names (e.g., "John Smith-Johnson" → firstName: "John", lastName: "Smith-Johnson")
+- Organization name is optional but recommended for lead qualification
+
+CORS
+----
+Enabled for all origins - can be called from any website
+
+QUICK TIPS
+----------
+- Always include email - it's the primary identifier
+- Use either firstName/lastName OR fullName (not both)
+- organizationName helps with lead scoring in Salesforce
+- Endpoint handles duplicate submissions gracefully
+- Response is always JSON format
+
+FORM INTEGRATION EXAMPLE
+------------------------
+<form id="trial-form">
+  <input name="firstName" placeholder="First Name" required>
+  <input name="lastName" placeholder="Last Name" required>
+  <input name="email" type="email" placeholder="Email" required>
+  <input name="organizationName" placeholder="Company Name">
+  <button type="submit">Request Trial Access</button>
+</form>
+
+<script>
+document.getElementById('trial-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const formData = new FormData(e.target);
+  const data = Object.fromEntries(formData);
+  
+  try {
+    const response = await fetch('https://salesforce-lead-intake-api.vercel.app/api/trial-access', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    const result = await response.json();
+    
+    if (result.success) {
+      alert('Trial request submitted successfully!');
+    } else {
+      alert('Error: ' + result.message);
+    }
+  } catch (error) {
+    alert('Network error. Please try again.');
+  }
+});
+</script>
