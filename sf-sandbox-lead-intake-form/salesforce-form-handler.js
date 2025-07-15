@@ -276,7 +276,14 @@ async function createTrialTask(leadId, organizationName, token, instanceUrl) {
 }
 
 // Export for use in other modules
-module.exports = { submitForm, submitTrialRequest };
+module.exports = {
+  submitForm,
+  submitTrialRequest,
+  authenticate,
+  queryLead,
+  createLead,
+  createTask
+};
 
 // If running directly (not imported), run the interactive version
 if (require.main === module) {
