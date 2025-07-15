@@ -89,6 +89,8 @@ async function createPersonRecord(firstName, lastName, email, airtableToken) {
   console.log('Person data being sent:', JSON.stringify(personData, null, 2));
   
   try {
+    console.log('Making request to:', `https://api.airtable.com/v0/${baseId}/${tableName}`);
+    
     const response = await fetch(`https://api.airtable.com/v0/${baseId}/${tableName}`, {
       method: 'POST',
       headers: {
@@ -98,9 +100,18 @@ async function createPersonRecord(firstName, lastName, email, airtableToken) {
       body: JSON.stringify(personData)
     });
     
+    console.log('Response status:', response.status);
+    console.log('Response ok:', response.ok);
+    
     const data = await response.json();
     
-    console.log('✅ Person record creation response:', JSON.stringify(data, null, 2));
+    console.log('✅ Full Airtable response:', JSON.stringify(data, null, 2));
+    
+    if (!response.ok) {
+      console.error('❌ Airtable API error:', data);
+      throw new Error(`Airtable API error: ${response.status} - ${JSON.stringify(data)}`);
+    }
+    
     console.log('🎯 Person record ID created:', data.id);
     
     return data.id;
