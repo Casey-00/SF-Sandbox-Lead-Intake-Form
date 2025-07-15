@@ -70,7 +70,12 @@ export default async function handler(req, res) {
     res.status(500).json({ 
       success: false, 
       message: 'Sorry, there was an error processing your subscription. Please try again.',
-      error: error.message
+      error: error.message,
+      debug: {
+        hasAirtableToken: !!process.env.AIRTABLE_API_TOKEN,
+        hasBaseId: !!process.env.AIRTABLE_BASE_ID,
+        stack: error.stack
+      }
     });
   }
 }
