@@ -45,11 +45,8 @@ export default async function handler(req, res) {
     
     console.log('✅ Airtable configuration loaded!');
 
-    console.log('🔍 Step 2: Looking up Nuon Newsletter subscription...');
-    const subscriptionId = await findNuonNewsletterSubscription(airtableToken);
-    
-    console.log('✨ Step 3: Creating person record in Airtable...');
-    await createPersonRecord(firstName, lastName, email, subscriptionId, airtableToken);
+    console.log('✨ Step 2: Creating person record in Airtable...');
+    await createPersonRecord(firstName, lastName, email, airtableToken);
     
     console.log('✅ Airtable email marketing subscription completed successfully!');
     res.status(200).json({ 
@@ -73,38 +70,7 @@ export default async function handler(req, res) {
   }
 }
 
-async function findNuonNewsletterSubscription(airtableToken) {
-  console.log('🔍 Looking for "Nuon Newsletter" subscription...');
-  
-  // Using the correct base ID: appOiKeK8DXCv4L2q
-  const baseId = 'appOiKeK8DXCv4L2q';
-  
-  const url = `https://api.airtable.com/v0/${baseId}/Subscriptions?filterByFormula=${encodeURIComponent('{Name} = "Nuon Newsletter"')}`;
-  
-  const response = await fetch(url, {
-    headers: {
-      'Authorization': `Bearer ${airtableToken}`,
-      'Content-Type': 'application/json'
-    }
-  });
-  
-  if (!response.ok) {
-    throw new Error(`Airtable API error: ${response.status} ${response.statusText}`);
-  }
-  
-  const data = await response.json();
-  
-  if (!data.records || data.records.length === 0) {
-    throw new Error('Nuon Newsletter subscription not found in Airtable');
-  }
-  
-  const subscriptionId = data.records[0].id;
-  console.log('✅ Found Nuon Newsletter subscription with ID:', subscriptionId);
-  
-  return subscriptionId;
-}
-
-async function createPersonRecord(firstName, lastName, email, subscriptionId, airtableToken) {
+async function createPersonRecord(firstName, lastName, email, airtableToken) {
   console.log('📝 Creating person record in Airtable...');
   
   // Using the correct base ID and table name: appOiKeK8DXCv4L2q and People
@@ -116,7 +82,7 @@ async function createPersonRecord(firstName, lastName, email, subscriptionId, ai
       first_name: firstName,   // Case sensitive field name
       last_name: lastName,     // Case sensitive field name
       email: email,
-      Subscriptions: [subscriptionId] // Link to the subscription record
+      Subscriptions: ["Nuon Newsletter"] // Directly set to Nuon Newsletter
     }
   };
   
