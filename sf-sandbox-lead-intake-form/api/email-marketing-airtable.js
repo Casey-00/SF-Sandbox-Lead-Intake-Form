@@ -39,20 +39,18 @@ export default async function handler(req, res) {
     
     console.log('🔑 Step 1: Getting Airtable configuration...');
     const airtableToken = process.env.AIRTABLE_API_TOKEN;
-    const baseId = process.env.AIRTABLE_BASE_ID;
-    const tableName = process.env.AIRTABLE_TABLE_NAME;
     
-    if (!airtableToken || !baseId || !tableName) {
-      throw new Error('Missing Airtable configuration');
+    if (!airtableToken) {
+      throw new Error('Missing Airtable API token');
     }
     
     console.log('✅ Airtable configuration loaded!');
 
     console.log('🔍 Step 2: Looking up Nuon Newsletter subscription...');
-    const subscriptionId = await findNewsletterSubscription(airtableToken, baseId);
+    const subscriptionId = await findNuonNewsletterSubscription(airtableToken);
     
     console.log('✨ Step 3: Creating person record in Airtable...');
-    await createPersonRecord(firstName, lastName, email, subscriptionId, airtableToken, baseId, tableName);
+    await createPersonRecord(firstName, lastName, email, subscriptionId, airtableToken);
     
     console.log('✅ Airtable email marketing subscription completed successfully!');
     res.status(200).json({ 
@@ -71,26 +69,24 @@ export default async function handler(req, res) {
     res.status(500).json({ 
       success: false, 
       message: 'Sorry, there was an error processing your subscription. Please try again.',
-      error: error.message,
-      debug: {
-        hasAirtableToken: !!process.env.AIRTABLE_API_TOKEN,
-        hasBaseId: !!process.env.AIRTABLE_BASE_ID,
-        stack: error.stack
-      }
+      error: error.message
     });
   }
 }
 
-async function findNewsletterSubscription(airtableToken, baseId) {
+async function findNuonNewsletterSubscription(airtableToken) {
   console.log('🔍 Looking for "Nuon Newsletter" subscription...');
   
-  const response = await axios.get(`https://api.airtable.com/v0/${baseId}/Subscription`, {
+  // Using the correct base ID: appOiKeK8DXCv4L2q
+  const baseId = 'appOiKeK8DXCv4L2q';
+  
+  const response = await axios.get(`https://api.airtable.com/v0/${baseId}/Subscriptions`, {
     headers: {
       'Authorization': `Bearer ${airtableToken}`,
       'Content-Type': 'application/json'
     },
     params: {
-      filterByFormula: `{Subscription Name} = "Nuon Newsletter"`
+      filterByFormula: `{Name} = "Nuon Newsletter"`
     }
   });
   
@@ -104,15 +100,19 @@ async function findNewsletterSubscription(airtableToken, baseId) {
   return subscriptionId;
 }
 
-async function createPersonRecord(firstName, lastName, email, subscriptionId, airtableToken, baseId, tableName) {
+async function createPersonRecord(firstName, lastName, email, subscriptionId, airtableToken) {
   console.log('📝 Creating person record in Airtable...');
+  
+  // Using the correct base ID and table name: appOiKeK8DXCv4L2q and People
+  const baseId = 'appOiKeK8DXCv4L2q';
+  const tableName = 'People';
   
   const personData = {
     fields: {
-      first_name: firstName,
-      last_name: lastName,
+      first_name: firstName,   // Case sensitive field name
+      last_name: lastName,     // Case sensitive field name
       email: email,
-      subscription: [subscriptionId] // Link to the subscription record
+      Subscriptions: [subscriptionId] // Link to the subscription record
     }
   };
   
