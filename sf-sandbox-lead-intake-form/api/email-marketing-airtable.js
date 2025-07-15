@@ -23,15 +23,19 @@ export default async function handler(req, res) {
     console.log('📧 Received Airtable email marketing subscription request...');
     console.log('Marketing data:', JSON.stringify(req.body, null, 2));
     
-    const { firstName, lastName, email } = req.body;
+    const { email } = req.body;
     
-    // Validate required fields
-    if (!firstName || !lastName || !email) {
+    // Validate required fields - only email is required now
+    if (!email) {
       return res.status(400).json({ 
         success: false, 
-        message: 'firstName, lastName, and email are required' 
+        message: 'email is required' 
       });
     }
+    
+    // Set placeholders for firstName, lastName
+    const firstName = '-';
+    const lastName = '-';
     
     console.log('🔑 Step 1: Getting Airtable configuration...');
     const airtableToken = process.env.AIRTABLE_API_TOKEN;
