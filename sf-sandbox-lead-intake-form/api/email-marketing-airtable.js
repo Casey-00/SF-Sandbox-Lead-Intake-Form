@@ -45,8 +45,11 @@ export default async function handler(req, res) {
     
     console.log('✅ Airtable configuration loaded!');
 
-    console.log('✨ Step 2: Creating person record in Airtable...');
-    await createPersonRecord(firstName, lastName, email, airtableToken);
+    console.log('✨ Step 2: Finding Nuon Newsletter subscription record...');
+    const subscriptionId = await findSubscriptionRecord(airtableToken);
+    
+    console.log('✨ Step 3: Creating person record in Airtable...');
+    await createPersonRecord(firstName, lastName, email, subscriptionId, airtableToken);
     
     console.log('✅ Airtable email marketing subscription completed successfully!');
     res.status(200).json({ 
@@ -70,7 +73,7 @@ export default async function handler(req, res) {
   }
 }
 
-async function createPersonRecord(firstName, lastName, email, airtableToken) {
+async function createPersonRecord(firstName, lastName, email, subscriptionId, airtableToken) {
   console.log('📝 Creating person record in Airtable...');
   
   // Using the correct base ID and table name: appOiKeK8DXCv4L2q and People
@@ -81,8 +84,8 @@ async function createPersonRecord(firstName, lastName, email, airtableToken) {
     fields: {
       first_name: firstName,   // Case sensitive field name
       last_name: lastName,     // Case sensitive field name
-      email: email
-      // Skipping Subscriptions field for now
+      email: email,
+      Subscriptions: [subscriptionId]  // Link to the Nuon Newsletter subscription
     }
   };
   
@@ -117,6 +120,48 @@ async function createPersonRecord(firstName, lastName, email, airtableToken) {
     return data.id;
   } catch (error) {
     console.error('❌ Error creating person record:');
+    console.error('Error message:', error.message);
+    throw error;
+  }
+}
+
+async function findSubscriptionRecord(airtableToken) {
+  console.log('🔍 Finding Nuon Newsletter subscription record...');
+  
+  const baseId = 'appOiKeK8DXCv4L2q';
+  const tableName = 'Subscription';
+  
+  try {
+    // Search for the "Nuon Newsletter" record in the Subscription table
+    const response = await fetch(`https://api.airtable.com/v0/${baseId}/${tableName}?filterByFormula={Subscription Name}="Nuon Newsletter"`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${airtableToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    console.log('Subscription search response status:', response.status);
+    
+    const data = await response.json();
+    
+    console.log('✅ Subscription search response:', JSON.stringify(data, null, 2));
+    
+    if (!response.ok) {
+      console.error('❌ Subscription search API error:', data);
+      throw new Error(`Subscription search API error: ${response.status} - ${JSON.stringify(data)}`);
+    }
+    
+    if (!data.records || data.records.length === 0) {
+      throw new Error('Nuon Newsletter subscription record not found');
+    }
+    
+    const subscriptionId = data.records[0].id;
+    console.log('🎯 Found Nuon Newsletter subscription ID:', subscriptionId);
+    
+    return subscriptionId;
+  } catch (error) {
+    console.error('❌ Error finding subscription record:');
     console.error('Error message:', error.message);
     throw error;
   }
