@@ -40,8 +40,9 @@ export default async function handler(req, res) {
     console.log('🔑 Step 1: Getting Airtable configuration...');
     const airtableToken = process.env.AIRTABLE_API_TOKEN;
     const baseId = process.env.AIRTABLE_BASE_ID;
+    const tableName = process.env.AIRTABLE_TABLE_NAME;
     
-    if (!airtableToken || !baseId) {
+    if (!airtableToken || !baseId || !tableName) {
       throw new Error('Missing Airtable configuration');
     }
     
@@ -51,7 +52,7 @@ export default async function handler(req, res) {
     const subscriptionId = await findNewsletterSubscription(airtableToken, baseId);
     
     console.log('✨ Step 3: Creating person record in Airtable...');
-    await createPersonRecord(firstName, lastName, email, subscriptionId, airtableToken, baseId);
+    await createPersonRecord(firstName, lastName, email, subscriptionId, airtableToken, baseId, tableName);
     
     console.log('✅ Airtable email marketing subscription completed successfully!');
     res.status(200).json({ 
@@ -103,7 +104,7 @@ async function findNewsletterSubscription(airtableToken, baseId) {
   return subscriptionId;
 }
 
-async function createPersonRecord(firstName, lastName, email, subscriptionId, airtableToken, baseId) {
+async function createPersonRecord(firstName, lastName, email, subscriptionId, airtableToken, baseId, tableName) {
   console.log('📝 Creating person record in Airtable...');
   
   const personData = {
@@ -118,7 +119,7 @@ async function createPersonRecord(firstName, lastName, email, subscriptionId, ai
   console.log('Person data being sent:', JSON.stringify(personData, null, 2));
   
   try {
-    const response = await axios.post(`https://api.airtable.com/v0/${baseId}/People`, personData, {
+    const response = await axios.post(`https://api.airtable.com/v0/${baseId}/${tableName}`, personData, {
       headers: {
         'Authorization': `Bearer ${airtableToken}`,
         'Content-Type': 'application/json'
