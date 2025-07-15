@@ -88,9 +88,13 @@ async function findNuonNewsletterSubscription(airtableToken) {
     }
   });
   
+  if (!response.ok) {
+    throw new Error(`Airtable API error: ${response.status} ${response.statusText}`);
+  }
+  
   const data = await response.json();
   
-  if (data.records.length === 0) {
+  if (!data.records || data.records.length === 0) {
     throw new Error('Nuon Newsletter subscription not found in Airtable');
   }
   
