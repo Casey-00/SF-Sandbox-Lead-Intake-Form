@@ -81,8 +81,8 @@ async function createPersonRecord(firstName, lastName, email, airtableToken) {
     fields: {
       first_name: firstName,   // Case sensitive field name
       last_name: lastName,     // Case sensitive field name
-      email: email,
-      Subscriptions: ["Nuon Newsletter"] // Directly set to Nuon Newsletter
+      email: email
+      // Skipping Subscriptions field for now
     }
   };
   
