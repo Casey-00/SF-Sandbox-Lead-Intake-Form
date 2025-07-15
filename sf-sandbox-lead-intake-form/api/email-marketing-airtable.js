@@ -1,5 +1,4 @@
 // Vercel Serverless Function for Email Marketing Subscriptions (Airtable)
-const axios = require('axios');
 
 export default async function handler(req, res) {
   // Enable CORS for all origins
@@ -80,21 +79,22 @@ async function findNuonNewsletterSubscription(airtableToken) {
   // Using the correct base ID: appOiKeK8DXCv4L2q
   const baseId = 'appOiKeK8DXCv4L2q';
   
-  const response = await axios.get(`https://api.airtable.com/v0/${baseId}/Subscriptions`, {
+  const url = `https://api.airtable.com/v0/${baseId}/Subscriptions?filterByFormula=${encodeURIComponent('{Name} = "Nuon Newsletter"')}`;
+  
+  const response = await fetch(url, {
     headers: {
       'Authorization': `Bearer ${airtableToken}`,
       'Content-Type': 'application/json'
-    },
-    params: {
-      filterByFormula: `{Name} = "Nuon Newsletter"`
     }
   });
   
-  if (response.data.records.length === 0) {
+  const data = await response.json();
+  
+  if (data.records.length === 0) {
     throw new Error('Nuon Newsletter subscription not found in Airtable');
   }
   
-  const subscriptionId = response.data.records[0].id;
+  const subscriptionId = data.records[0].id;
   console.log('✅ Found Nuon Newsletter subscription with ID:', subscriptionId);
   
   return subscriptionId;
@@ -119,24 +119,24 @@ async function createPersonRecord(firstName, lastName, email, subscriptionId, ai
   console.log('Person data being sent:', JSON.stringify(personData, null, 2));
   
   try {
-    const response = await axios.post(`https://api.airtable.com/v0/${baseId}/${tableName}`, personData, {
+    const response = await fetch(`https://api.airtable.com/v0/${baseId}/${tableName}`, {
+      method: 'POST',
       headers: {
         'Authorization': `Bearer ${airtableToken}`,
         'Content-Type': 'application/json'
-      }
+      },
+      body: JSON.stringify(personData)
     });
     
-    console.log('✅ Person record creation response:', JSON.stringify(response.data, null, 2));
-    console.log('🎯 Person record ID created:', response.data.id);
+    const data = await response.json();
     
-    return response.data.id;
+    console.log('✅ Person record creation response:', JSON.stringify(data, null, 2));
+    console.log('🎯 Person record ID created:', data.id);
+    
+    return data.id;
   } catch (error) {
     console.error('❌ Error creating person record:');
     console.error('Error message:', error.message);
-    if (error.response) {
-      console.error('Response status:', error.response.status);
-      console.error('Response data:', JSON.stringify(error.response.data, null, 2));
-    }
     throw error;
   }
 }
