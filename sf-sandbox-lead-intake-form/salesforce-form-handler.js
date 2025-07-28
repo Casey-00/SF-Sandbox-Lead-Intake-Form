@@ -170,9 +170,9 @@ async function submitForm({ firstName, lastName, jobTitle, email, companyName, n
   }
 }
 
-async function submitTrialRequest({ firstName, lastName, email, organizationName, fullName }) {
+async function submitTrialRequest({ firstName, lastName, email, organizationName, fullName, jobTitle, description }) {
   console.log('🔍 Starting trial access request process...');
-  console.log('Trial request data received:', { firstName, lastName, email, organizationName, fullName });
+  console.log('Trial request data received:', { firstName, lastName, email, organizationName, fullName, jobTitle, description });
   
   try {
     console.log('🔑 Step 1: Authenticating...');
@@ -185,7 +185,7 @@ async function submitTrialRequest({ firstName, lastName, email, organizationName
 
     if (existingLead) {
       console.log('✅ Lead exists. Adding trial access task...');
-      await createTrialTask(existingLead.Id, organizationName, token, instanceUrl);
+      await createTrialTask(existingLead.Id, organizationName, jobTitle, description, token, instanceUrl);
       console.log('📝 Trial access task added successfully!');
     } else {
       console.log('✨ Step 3: Creating new lead for trial access...');
@@ -201,7 +201,7 @@ async function submitTrialRequest({ firstName, lastName, email, organizationName
         console.log(`📝 Parsed fullName "${fullName}" into firstName: "${finalFirstName}", lastName: "${finalLastName}"`);
       }
       
-      const leadId = await createTrialLead(finalFirstName, finalLastName, email, organizationName, token, instanceUrl);
+      const leadId = await createTrialLead(finalFirstName, finalLastName, email, organizationName, jobTitle, description, token, instanceUrl);
       console.log('🎉 Trial access lead created with ID:', leadId);
     }
     console.log('✅ Trial access request completed successfully!');
@@ -217,15 +217,20 @@ async function submitTrialRequest({ firstName, lastName, email, organizationName
   }
 }
 
-async function createTrialLead(firstName, lastName, email, organizationName, token, instanceUrl) {
+async function createTrialLead(firstName, lastName, email, organizationName, jobTitle, description, token, instanceUrl) {
   const leadData = {
     FirstName: firstName,
     LastName: lastName,
     Email: email,
     Company: organizationName || 'Unknown Organization',
     LeadSource: 'Web',
-    Description: 'Requested trial access'
+    Description: description || 'Requested trial access'
   };
+  
+  // Add job title if provided
+  if (jobTitle && jobTitle.trim()) {
+    leadData.Title = jobTitle;
+  }
   
   console.log('Creating trial lead with data:', JSON.stringify(leadData, null, 2));
   
@@ -235,13 +240,25 @@ async function createTrialLead(firstName, lastName, email, organizationName, tok
   return response.data.id;
 }
 
-async function createTrialTask(leadId, organizationName, token, instanceUrl) {
+async function createTrialTask(leadId, organizationName, jobTitle, description, token, instanceUrl) {
   console.log('📝 Creating trial access task for lead ID:', leadId);
+  
+  // Build description with all available information
+  let taskDescription = 'Trial access requested';
+  const details = [];
+  
+  if (organizationName) details.push(`Organization: ${organizationName}`);
+  if (jobTitle) details.push(`Job Title: ${jobTitle}`);
+  if (description) details.push(`Additional Details: ${description}`);
+  
+  if (details.length > 0) {
+    taskDescription += '\n\n' + details.join('\n');
+  }
   
   const taskData = {
     WhoId: leadId,
     Subject: 'Requested trial access',
-    Description: organizationName ? `Trial access requested for organization: ${organizationName}` : 'Trial access requested',
+    Description: taskDescription,
     Status: 'Not Started',
     Priority: 'Normal',
     ActivityDate: new Date().toISOString().split('T')[0] // Today's date

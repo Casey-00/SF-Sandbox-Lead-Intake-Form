@@ -29,7 +29,9 @@ export default async function handler(req, res) {
       lastName: req.body.lastName,
       email: req.body.email,
       organizationName: req.body.organizationName || req.body.organization || req.body.companyName || req.body.company,
-      fullName: req.body.fullName || req.body.name
+      fullName: req.body.fullName || req.body.name,
+      jobTitle: req.body.jobTitle || req.body.title,
+      description: req.body.description || req.body.notes
     };
     
     console.log('Mapped trial data:', JSON.stringify(trialData, null, 2));
