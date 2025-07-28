@@ -203,6 +203,11 @@ async function submitTrialRequest({ firstName, lastName, email, organizationName
       
       const leadId = await createTrialLead(finalFirstName, finalLastName, email, organizationName, jobTitle, description, token, instanceUrl);
       console.log('🎉 Trial access lead created with ID:', leadId);
+      
+      // Always create a task for trial access requests (even for new leads)
+      console.log('📝 Adding trial access task to new lead...');
+      await createTrialTask(leadId, organizationName, jobTitle, description, token, instanceUrl);
+      console.log('📝 Trial access task added to new lead successfully!');
     }
     console.log('✅ Trial access request completed successfully!');
   } catch (err) {
