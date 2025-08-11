@@ -1,5 +1,5 @@
 // Vercel Serverless Function for Lead Submissions
-const { submitForm } = require('../salesforce-form-handler');
+const { submitForm } = require('../salesforce-form-handler'); // Use subfolder version with client credentials
 
 export default async function handler(req, res) {
   // Enable CORS for all origins
